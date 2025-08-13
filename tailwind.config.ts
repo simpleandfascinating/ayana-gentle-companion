@@ -52,6 +52,19 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// Ayana therapeutic colors
+				ayana: {
+					primary: 'hsl(var(--ayana-primary))',
+					secondary: 'hsl(var(--ayana-secondary))',
+					warm: 'hsl(var(--ayana-warm))',
+					sage: 'hsl(var(--ayana-sage))',
+					text: 'hsl(var(--ayana-text))',
+					'text-soft': 'hsl(var(--ayana-text-soft))'
+				},
+				breathing: {
+					primary: 'hsl(var(--breathing-primary))',
+					secondary: 'hsl(var(--breathing-secondary))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -84,11 +97,63 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': {
+						opacity: '0',
+						transform: 'translateY(10px)'
+					},
+					'100%': {
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
+				},
+				'breathe': {
+					'0%, 100%': {
+						transform: 'scale(0.8)',
+						opacity: '0.6'
+					},
+					'50%': {
+						transform: 'scale(1.2)',
+						opacity: '1'
+					}
+				},
+				'gentle-pulse': {
+					'0%, 100%': {
+						opacity: '0.8'
+					},
+					'50%': {
+						opacity: '1'
+					}
+				},
+				'typing': {
+					'0%': {
+						width: '0'
+					},
+					'100%': {
+						width: '100%'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.4s ease-out',
+				'breathe': 'breathe 4s ease-in-out infinite',
+				'gentle-pulse': 'gentle-pulse 2s ease-in-out infinite',
+				'typing': 'typing 1.5s steps(20, end)'
+			},
+			backgroundImage: {
+				'gradient-calming': 'var(--gradient-calming)',
+				'gradient-breathing': 'var(--gradient-breathing)'
+			},
+			boxShadow: {
+				'gentle': 'var(--shadow-gentle)',
+				'card': 'var(--shadow-card)'
+			},
+			transitionTimingFunction: {
+				'gentle': 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+				'breathing': 'cubic-bezier(0.4, 0, 0.6, 1)'
 			}
 		}
 	},
