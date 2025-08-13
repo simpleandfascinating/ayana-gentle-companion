@@ -1,73 +1,117 @@
-# Welcome to your Lovable project
+# Ayana
 
-## Project info
+**Ayana** is a simple AI assistant that notices when someone isn’t doing well, responds gently, and checks in again later. It’s meant to support people during difficult moments, especially when they don’t ask for help.
 
-**URL**: https://lovable.dev/projects/43ec2cb8-2ea1-4f9c-9a48-bf5acf939a8c
+---
 
-## How can I edit this code?
+## ✍️ What Ayana Does
 
-There are several ways of editing your application.
+Ayana quietly monitors how people express themselves through writing — in a journal, chatbox, or workspace.  
+When it detects signs of emotional distress, it offers support. It could suggest a breathing exercise, offer a short check-in, or ask if the person wants to reach out to someone they trust.  
+It doesn’t replace therapy. It doesn’t diagnose. It simply notices, responds, and stays close.
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/43ec2cb8-2ea1-4f9c-9a48-bf5acf939a8c) and start prompting.
+## 📸 Screens (Preview Coming Soon)
 
-Changes made via Lovable will be committed automatically to this repo.
+We’ll include UI images here soon, including:
 
-**Use your preferred IDE**
+- Message detection and response  
+- Breathing guide  
+- Follow-up scheduling  
+- Trusted contact alert  
+- Ayana’s “thinking” process (e.g., detecting emotion, choosing response)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## ⚙️ How Ayana Works in the Real World
 
-Follow these steps:
+Ayana runs quietly in tools people already use — like journaling apps, messaging platforms, or wellness dashboards.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Real-world flow:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+1. **A person writes something like**  
+   _“I’m tired of pretending I’m okay.”_
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. **Ayana reads it** using IBM watsonx’s NLP tools to detect distress based on tone and phrasing.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+3. **Ayana classifies the moment**  
+   It decides whether it’s burnout, anxiety, hopelessness, or something else.
 
-**Edit a file directly in GitHub**
+4. **It acts**  
+   It suggests a small supportive step, like breathing together or offering a kind message.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+5. **It remembers**  
+   It checks in later, even if the user didn’t reply the first time.
 
-**Use GitHub Codespaces**
+6. **It asks for consent to escalate**  
+   If the distress is high, it offers to notify a trusted contact.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## 🧠 How Ayana Uses IBM Watsonx Agentic AI
 
-This project is built with:
+Ayana is built around **agentic AI principles** using IBM watsonx. That means it doesn’t just respond — it decides when and how to act, based on what it sees.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### How it works behind the scenes:
 
-## How can I deploy this project?
+| Agent Function | Powered by |
+|----------------|------------|
+| **Detection** – reads natural input and detects distress | `watsonx.ai` large language models for sentiment and emotion analysis |
+| **Classification** – tags the type and level of emotional strain | Fine-tuned NLP model on watsonx.ai |
+| **Decision-making** – chooses response strategy (calming vs. escalate) | Simple agent logic + orchestration through IBM Cloud Functions |
+| **Response** – sends a message, starts breathing session, or prompts for human contact | Generated and routed through IBM orchestration layers |
+| **Follow-up scheduling** – sets future check-in without prompt | Persistent agent memory and task flow manager |
 
-Simply open [Lovable](https://lovable.dev/projects/43ec2cb8-2ea1-4f9c-9a48-bf5acf939a8c) and click on Share -> Publish.
+Ayana operates like a real agent — it observes, reasons, decides, and takes action, using IBM watsonx as its core engine.
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+## 🎯 Use Case
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Ayana is built for people who:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- Struggle to ask for help  
+- Don’t want to open a therapy app when they’re overwhelmed  
+- Need small moments of comfort, not clinical advice  
+- Prefer something that notices, not something that waits
+
+This includes:
+- Students
+- Remote workers
+- People in therapy between sessions
+
+---
+
+## 💬 Why This Matters
+
+Ayana came from a real story.  
+The person building it lost a friend to suicide—someone who didn’t ask for help.  
+Now, Ayana is here to be the support that person never got.
+
+---
+
+## ✅ Status
+
+This is a working simulation for a hackathon demo.  
+The behavior is modeled using Gemini AI for now, but the architecture is built for **IBM watsonx agentic AI**.
+
+---
+
+## 📁 Demo Assets (coming soon)
+
+- [ ] Screenshot of initial response  
+- [ ] Breathing guide screen  
+- [ ] Check-in scheduling  
+- [ ] Escalation prompt  
+- [ ] Agent logic visual (how it reasons and acts)
+
+---
+
+## 📌 Note
+
+Ayana is not a therapist.  
+It’s a companion.  
+People in crisis should always reach out to someone they trust or contact emergency services.
+
+---
