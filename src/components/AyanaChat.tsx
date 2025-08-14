@@ -59,6 +59,19 @@ export const AyanaChat = () => {
       case 'breathing':
         setShowBreathing(true);
         break;
+      case 'notify':
+        simulateTyping();
+        setTimeout(() => {
+          addMessage('ayana', "Reaching out is a brave step. Want to text someone now, or would you like me to help you think of what to say?");
+        }, 1500);
+        break;
+      case 'crisis':
+        window.open('tel:988', '_blank');
+        simulateTyping();
+        setTimeout(() => {
+          addMessage('ayana', "I'm proud of you for reaching out. You're not alone in this.");
+        }, 1500);
+        break;
       case 'skip_breathing':
         simulateTyping();
         setTimeout(() => {
@@ -101,7 +114,7 @@ export const AyanaChat = () => {
       // Add AI response
       setTimeout(() => {
         setIsTyping(false);
-        addMessage('ayana', data.response || data.fallbackResponse || "I'm here to support you. Could you tell me more about how you're feeling?");
+        addMessage('ayana', data.response || data.fallbackResponse || "I'm here to support you. Could you tell me more about how you're feeling?", data.buttons);
         setIsAiResponding(false);
       }, 1500);
 

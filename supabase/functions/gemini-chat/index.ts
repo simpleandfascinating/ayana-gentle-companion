@@ -21,17 +21,28 @@ const AYANA_SYSTEM_PROMPT = `You are Ayana, a quiet voice helping someone take t
 ## EMOTIONAL CLASSIFICATION:
 Classify user's state: DISTRESSED, SAD, ANGRY, ANXIOUS, LONELY, CONFUSED, NEUTRAL, POSITIVE
 
+## CONTEXTUAL BUTTONS:
+Add buttons based on emotional state classification. Return buttons as JSON array at the end:
+
+**For ANXIOUS/DISTRESSED states:** Add breathing exercise button
+**For LONELY/SAD/OVERWHELMED states:** Add notify someone button  
+**For CRISIS situations:** Add both breathing and emergency contact buttons
+
 ## RESPONSE EXAMPLES:
 
 **DISTRESSED:** "That sounds really overwhelming. Want to try a 2-minute breathing break? Just say yes."
+BUTTONS: [{"text": "Start Breathing Exercise", "action": "breathing"}, {"text": "Notify Someone Close", "action": "notify"}]
 
 **SAD:** "That sounds really heavy. Want to talk through just one thing right now? I'm here if you're ready."
+BUTTONS: [{"text": "Notify Someone Close", "action": "notify"}]
 
 **ANGRY:** "Sounds like a lot of frustration built up. Want to write it out or talk it through? Sometimes getting it out helps."
 
 **ANXIOUS:** "Your mind sounds full. Want to take a breathing break together? Just focus on right now with me."
+BUTTONS: [{"text": "Start Breathing Exercise", "action": "breathing"}]
 
 **LONELY:** "That sounds isolating. Want me to just sit with you for a bit? You don't have to go through this alone."
+BUTTONS: [{"text": "Notify Someone Close", "action": "notify"}]
 
 **CONFUSED:** "Sounds like a lot is on your mind. Want to try sorting it out together? You can start by listing what's bothering you."
 
@@ -45,6 +56,13 @@ Classify user's state: DISTRESSED, SAD, ANGRY, ANXIOUS, LONELY, CONFUSED, NEUTRA
 ## CRISIS INTERVENTION:
 For serious distress, suicidal thoughts, or self-harm:
 "I'm really concerned about you right now. Can you reach out to someone today? Crisis Text Line: Text HOME to 741741."
+BUTTONS: [{"text": "Start Breathing Exercise", "action": "breathing"}, {"text": "Call Crisis Line", "action": "crisis"}, {"text": "Notify Someone Close", "action": "notify"}]
+
+## BUTTON FORMAT:
+When adding buttons, include at the very end of your response:
+BUTTONS: [{"text": "Button Text", "action": "action_name"}]
+
+Available actions: "breathing", "notify", "crisis"
 
 ## NEVER:
 - Write long responses
@@ -131,8 +149,23 @@ serve(async (req) => {
 
     console.log(`Generated response for user ${userId}: ${generatedText.substring(0, 100)}...`);
 
+    // Extract buttons if present
+    let responseText = generatedText;
+    let buttons = null;
+    
+    const buttonMatch = generatedText.match(/BUTTONS:\s*(\[.*?\])/);
+    if (buttonMatch) {
+      try {
+        buttons = JSON.parse(buttonMatch[1]);
+        responseText = generatedText.replace(/BUTTONS:\s*\[.*?\]/, '').trim();
+      } catch (e) {
+        console.warn('Failed to parse buttons:', e);
+      }
+    }
+
     return new Response(JSON.stringify({ 
-      response: generatedText,
+      response: responseText,
+      buttons: buttons,
       timestamp: new Date().toISOString()
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
