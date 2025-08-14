@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import ayanaAvatar from '@/assets/ayana-avatar.png';
 import { BreathingExercise } from './BreathingExercise';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Message {
   id: string;
@@ -23,46 +27,14 @@ interface SentimentIndicator {
 
 export const AyanaChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [currentStep, setCurrentStep] = useState(0);
   const [showBreathing, setShowBreathing] = useState(false);
   const [sentiment, setSentiment] = useState<SentimentIndicator | null>(null);
   const [isTyping, setIsTyping] = useState(false);
-
-  const conversationFlow = [
-    {
-      type: 'user',
-      content: "I'm so tired of this. I can't keep up.",
-      sentiment: {
-        level: 'moderate distress',
-        type: 'burnout',
-        module: 'breathing guide'
-      }
-    },
-    {
-      type: 'ayana',
-      content: "That sounds like a lot, Steve. Want to take a moment to breathe together?",
-      buttons: [
-        { text: 'Try breathing', action: 'breathing' },
-        { text: 'Not now', action: 'skip_breathing' }
-      ]
-    },
-    {
-      type: 'ayana',
-      content: "You did well. Want me to check in with you tomorrow?",
-      buttons: [
-        { text: 'Yes, please', action: 'check_in' },
-        { text: "No, I'm okay", action: 'no_check_in' }
-      ]
-    },
-    {
-      type: 'ayana',
-      content: "Would you like me to notify someone you trust?",
-      buttons: [
-        { text: 'Yes – message my brother', action: 'notify_contact' },
-        { text: 'No, keep it private', action: 'keep_private' }
-      ]
-    }
-  ];
+  const [userInput, setUserInput] = useState('');
+  const [isAiResponding, setIsAiResponding] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   const addMessage = (sender: 'user' | 'ayana', content: string, buttons?: Array<{text: string; action: string}>) => {
     const newMessage: Message = {
@@ -75,11 +47,10 @@ export const AyanaChat = () => {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  const simulateTyping = (callback: () => void, delay = 1500) => {
+  const simulateTyping = (delay = 1500) => {
     setIsTyping(true);
     setTimeout(() => {
       setIsTyping(false);
-      callback();
     }, delay);
   };
 
@@ -89,66 +60,88 @@ export const AyanaChat = () => {
         setShowBreathing(true);
         break;
       case 'skip_breathing':
-        simulateTyping(() => {
-          addMessage('ayana', "That's okay. I'm here whenever you need me.");
-          setTimeout(() => nextStep(), 1000);
-        });
+        simulateTyping();
+        setTimeout(() => {
+          addMessage('ayana', "That's okay. I'm here whenever you need me. How are you feeling right now?");
+        }, 1500);
         break;
-      case 'check_in':
-        addMessage('ayana', "Perfect. I'll gently reach out tomorrow evening. Take care of yourself, Steve. 💙");
-        setTimeout(() => nextStep(), 1000);
-        break;
-      case 'no_check_in':
-        addMessage('ayana', "I understand. Remember, I'm always here if you need support.");
-        setTimeout(() => nextStep(), 1000);
-        break;
-      case 'notify_contact':
-        addMessage('ayana', "I'll send a gentle message to your brother letting him know you could use some support. You're not alone in this.");
-        break;
-      case 'keep_private':
-        addMessage('ayana', "Of course. Your privacy is important. I'll keep this between us.");
+      case 'start_chat':
+        setHasStarted(true);
+        addMessage('user', "I'd like to talk");
+        simulateTyping();
+        setTimeout(() => {
+          addMessage('ayana', "I'm so glad you're here. This is a safe space where you can share whatever is on your mind. What's bringing you here today?");
+        }, 1500);
         break;
     }
   };
 
-  const nextStep = () => {
-    if (currentStep < conversationFlow.length - 1) {
-      setCurrentStep(prev => prev + 1);
+  const handleUserMessage = async () => {
+    if (!userInput.trim() || isAiResponding || !user) return;
+
+    const message = userInput.trim();
+    setUserInput('');
+    
+    // Add user message
+    addMessage('user', message);
+    
+    setIsAiResponding(true);
+    simulateTyping();
+
+    try {
+      const { data, error } = await supabase.functions.invoke('gemini-chat', {
+        body: { 
+          message: message,
+          userId: user.id 
+        }
+      });
+
+      if (error) throw error;
+
+      // Add AI response
+      setTimeout(() => {
+        setIsTyping(false);
+        addMessage('ayana', data.response || data.fallbackResponse || "I'm here to support you. Could you tell me more about how you're feeling?");
+        setIsAiResponding(false);
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      setIsTyping(false);
+      setIsAiResponding(false);
+      addMessage('ayana', "I'm having trouble connecting right now, but I'm here to listen. Could you tell me more about what's on your mind?");
+      toast.error('Connection issue. Please try again.');
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleUserMessage();
     }
   };
 
   const onBreathingComplete = () => {
     setShowBreathing(false);
-    simulateTyping(() => {
-      addMessage('ayana', "You did well. Want me to check in with you tomorrow?", [
-        { text: 'Yes, please', action: 'check_in' },
-        { text: "No, I'm okay", action: 'no_check_in' }
-      ]);
-      setCurrentStep(2);
-    });
+    simulateTyping();
+    setTimeout(() => {
+      addMessage('ayana', "You did wonderfully with that breathing exercise. How are you feeling now? Would you like to talk about what brought you here today?");
+    }, 1500);
   };
 
   useEffect(() => {
-    // Start the conversation
+    // Start with welcome message
     setTimeout(() => {
-      addMessage('user', "I'm so tired of this. I can't keep up.");
-      setSentiment({
-        level: 'moderate distress',
-        type: 'burnout',
-        module: 'breathing guide'
-      });
+      addMessage('ayana', "Hello, I'm Ayana. I'm here to provide you with emotional support and a safe space to talk. How would you like to begin?", [
+        { text: 'Start chatting', action: 'start_chat' },
+        { text: 'Try breathing exercise', action: 'breathing' }
+      ]);
     }, 1000);
-
-    setTimeout(() => {
-      simulateTyping(() => {
-        addMessage('ayana', "That sounds like a lot, Steve. Want to take a moment to breathe together?", [
-          { text: 'Try breathing', action: 'breathing' },
-          { text: 'Not now', action: 'skip_breathing' }
-        ]);
-        setCurrentStep(1);
-      });
-    }, 2500);
   }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
 
   if (showBreathing) {
     return <BreathingExercise onComplete={onBreathingComplete} />;
@@ -176,9 +169,9 @@ export const AyanaChat = () => {
 
         {/* Chat Container */}
         <Card className="shadow-gentle border-0 bg-card/80 backdrop-blur-sm">
-          <div className="p-8 space-y-6">
+          <div className="flex flex-col h-[600px]">
             {/* Header */}
-            <div className="flex items-center gap-4 pb-6 border-b border-border/50">
+            <div className="flex items-center gap-4 p-6 border-b border-border/50">
               <div className="relative">
                 <img 
                   src={ayanaAvatar} 
@@ -194,7 +187,7 @@ export const AyanaChat = () => {
             </div>
 
             {/* Messages */}
-            <div className="space-y-6 max-h-96 overflow-y-auto">
+            <div className="flex-1 p-6 space-y-6 overflow-y-auto">
               {messages.map((message, index) => (
                 <div 
                   key={message.id}
@@ -245,7 +238,7 @@ export const AyanaChat = () => {
                   
                   {message.sender === 'user' && (
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-ayana-primary to-ayana-secondary flex items-center justify-center text-white font-medium flex-shrink-0">
-                      S
+                      {user?.email?.charAt(0).toUpperCase() || 'U'}
                     </div>
                   )}
                 </div>
@@ -268,7 +261,32 @@ export const AyanaChat = () => {
                   </div>
                 </div>
               )}
+              <div ref={messagesEndRef} />
             </div>
+
+            {/* Input Area */}
+            {hasStarted && (
+              <div className="p-4 border-t bg-card">
+                <div className="flex space-x-2">
+                  <Input
+                    placeholder="Share what's on your mind..."
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    disabled={isAiResponding}
+                    className="flex-1 bg-background"
+                  />
+                  <Button 
+                    onClick={handleUserMessage}
+                    disabled={!userInput.trim() || isAiResponding}
+                    variant="default"
+                    className="bg-ayana-primary hover:bg-ayana-primary/90"
+                  >
+                    Send
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </Card>
       </div>
