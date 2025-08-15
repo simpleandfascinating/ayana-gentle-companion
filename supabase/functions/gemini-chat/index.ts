@@ -91,23 +91,41 @@ serve(async (req) => {
       throw new Error('Message is required');
     }
 
+    // Get IBM Cloud IAM token first
+    const iamResponse = await fetch('https://iam.cloud.ibm.com/identity/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `grant_type=urn:iam:params:oauth:grant-type:apikey&apikey=${watsonxApiKey}`
+    });
+
+    const iamData = await iamResponse.json();
+    
+    if (!iamResponse.ok) {
+      console.error('IBM IAM token error:', iamData);
+      throw new Error('Failed to get IBM Cloud authentication token');
+    }
+
+    const accessToken = iamData.access_token;
+
     console.log(`Processing message from user ${userId}: ${message}`);
 
     const response = await fetch('https://us-south.ml.cloud.ibm.com/ml/v1/text/generation?version=2023-05-29', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${watsonxApiKey}`,
+        'Authorization': `Bearer ${accessToken}`,
         'Accept': 'application/json',
       },
       body: JSON.stringify({
         input: `${AYANA_SYSTEM_PROMPT}\n\nUser message: ${message}`,
         parameters: {
           decoding_method: "greedy",
-          max_new_tokens: 512,
+          max_new_tokens: 300,
           temperature: 0.7,
           top_p: 0.9,
-          stop_sequences: ["\n\n"]
+          stop_sequences: ["\n\n", "User:", "BUTTONS:"]
         },
         model_id: "ibm/granite-13b-chat-v2",
         project_id: watsonxProjectId
