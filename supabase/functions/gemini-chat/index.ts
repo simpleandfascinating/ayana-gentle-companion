@@ -1,8 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const watsonxApiKey = Deno.env.get('IBM_WATSONX_API_KEY');
-const watsonxProjectId = Deno.env.get('IBM_WATSONX_PROJECT_ID');
+const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -83,66 +82,51 @@ serve(async (req) => {
   try {
     const { message, userId } = await req.json();
 
-    if (!watsonxApiKey || !watsonxProjectId) {
-      throw new Error('IBM watsonx API key and project ID not configured');
+    if (!geminiApiKey) {
+      throw new Error('Gemini API key not configured');
     }
 
     if (!message) {
       throw new Error('Message is required');
     }
 
-    // Get IBM Cloud IAM token first
-    const iamResponse = await fetch('https://iam.cloud.ibm.com/identity/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `grant_type=urn:iam:params:oauth:grant-type:apikey&apikey=${watsonxApiKey}`
-    });
-
-    const iamData = await iamResponse.json();
-    
-    if (!iamResponse.ok) {
-      console.error('IBM IAM token error:', iamData);
-      throw new Error('Failed to get IBM Cloud authentication token');
-    }
-
-    const accessToken = iamData.access_token;
-
     console.log(`Processing message from user ${userId}: ${message}`);
 
-    const response = await fetch('https://us-south.ml.cloud.ibm.com/ml/v1/text/generation?version=2023-05-29', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json',
       },
       body: JSON.stringify({
-        input: `${AYANA_SYSTEM_PROMPT}\n\nUser message: ${message}`,
-        parameters: {
-          decoding_method: "greedy",
-          max_new_tokens: 300,
+        contents: [
+          {
+            parts: [
+              {
+                text: `${AYANA_SYSTEM_PROMPT}\n\nUser message: ${message}`
+              }
+            ]
+          }
+        ],
+        generationConfig: {
           temperature: 0.7,
-          top_p: 0.9,
-          stop_sequences: ["\n\n", "User:", "BUTTONS:"]
-        },
-        model_id: "ibm/granite-13b-chat-v2",
-        project_id: watsonxProjectId
+          topP: 0.9,
+          maxOutputTokens: 300,
+          stopSequences: ["\n\n", "User:", "BUTTONS:"]
+        }
       }),
     });
 
     const data = await response.json();
     
     if (!response.ok) {
-      console.error('IBM watsonx API error:', data);
-      throw new Error(data.error?.message || data.message || 'Failed to get response from IBM watsonx');
+      console.error('Gemini API error:', data);
+      throw new Error(data.error?.message || 'Failed to get response from Gemini');
     }
 
-    const generatedText = data.results?.[0]?.generated_text;
+    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
     
     if (!generatedText) {
-      throw new Error('No response generated from IBM watsonx');
+      throw new Error('No response generated from Gemini');
     }
 
     console.log(`Generated response for user ${userId}: ${generatedText.substring(0, 100)}...`);
@@ -170,7 +154,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in watsonx-chat function:', error);
+    console.error('Error in gemini-chat function:', error);
     return new Response(JSON.stringify({ 
       error: error.message || 'An unexpected error occurred',
       fallbackResponse: "I'm here to listen and support you. Could you tell me a bit more about how you're feeling right now?"
